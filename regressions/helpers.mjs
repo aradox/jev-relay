@@ -29,6 +29,7 @@ export function handlers(options = {}) {
 }
 export function host() {
   return {
+    clock: { sleep: () => new Promise(() => {}) },
     env: { get: async () => undefined }, settings: { read: async () => ({}) },
     ui: { log() {}, toast() {} },
     session: { usage: async () => ({ context: { percent: 80 } }), compact: async () => ({}) },
