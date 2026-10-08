@@ -10,6 +10,7 @@ import {
   withCompactionDeadline,
 } from '../hooks/fast-jev.ts';
 import { applyDecisions, collectToolCalls, decideCall, type Message } from '../src/index.js';
+import { SYSTEM_ONE_URL } from '../src/request.js';
 
 type SessionMessage = Message & { handle?: string };
 
@@ -42,8 +43,9 @@ function transcript(): SessionMessage[] {
   ];
 }
 
-function jevFetch(answer: (name: string) => number, bodies: string[] = []) {
-  return async (_url: string, init?: { body?: string }) => {
+function jevFetch(answer: (name: string) => number, bodies: string[] = [], urls: string[] = []) {
+  return async (url: string, init?: { body?: string }) => {
+    urls.push(url);
     bodies.push(init?.body ?? '');
     const { questions } = JSON.parse(init?.body ?? '{}') as { questions: Record<string, unknown> };
     const answers = Object.fromEntries(
@@ -66,6 +68,7 @@ describe('hook config', () => {
     expect(
       resolveHookConfig({
         apiKey: 'k',
+        baseUrl: 'http://127.0.0.1:4010/v1/systemone',
         keepThreshold: 0.3,
         maxStateTokens: 1000,
         model: 'jev-x',
@@ -73,8 +76,10 @@ describe('hook config', () => {
         compactAtPercent: 'no',
         logDecisions: 'yes',
       }),
+
     ).toEqual({
       apiKey: 'k',
+      baseUrl: 'http://127.0.0.1:4010/v1/systemone',
       keepThreshold: 0.3,
       maxStateTokens: 1000,
       model: 'jev-x',
@@ -216,12 +221,14 @@ describe('session message mapping', () => {
 describe('compactSession', () => {
   it('runs the library over the engine fetch and reports the outcome', async () => {
     const bodies: string[] = [];
+    const urls: string[] = [];
     const config = { ...resolveHookConfig({ preserveRecentMessages: 1 }), apiKey: 'k', model: 'jev-x' };
     const { result: output, messages } = await compactSession(
       transcript(),
       config,
-      jevFetch((name) => (name === 'call_t2' || name === 'result_t2' ? 0.9 : 0.1), bodies),
+      jevFetch((name) => (name === 'call_t2' || name === 'result_t2' ? 0.9 : 0.1), bodies, urls),
     );
+    expect(urls).toEqual([SYSTEM_ONE_URL]);
     expect(bodies).toHaveLength(1);
     expect(JSON.parse(bodies[0]!).model).toBe('jev-x');
     expect(output.decisions.map((d) => d.action)).toEqual(['drop_call', 'keep']);
@@ -241,6 +248,14 @@ describe('compactSession', () => {
     ]);
     expect(lines.every((line) => line.length <= 60)).toBe(true);
     expect(decisionLogLines({ ...output, decisions: [] })).toEqual(['decisions: (none)']);
+  });
+
+  it('sends the requests to a configured baseUrl', async () => {
+    const urls: string[] = [];
+    const baseUrl = 'http://127.0.0.1:4010/v1/systemone';
+    const config = { ...resolveHookConfig({ preserveRecentMessages: 1, baseUrl }), apiKey: 'k' };
+    await compactSession(transcript(), config, jevFetch(() => 0.1, [], urls));
+    expect(urls).toEqual([baseUrl]);
   });
 
   it('throws on a missing key and on failed requests so the hook falls back', async () => {

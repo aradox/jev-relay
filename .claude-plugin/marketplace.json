@@ -10,6 +10,7 @@
       "source": "./",
       "description": "Verbatim Jev-guided compaction for Claude Code sessions.",
       "version": "0.3.1-local.1",
+
       "license": "MIT"
     }
   ]

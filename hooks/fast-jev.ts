@@ -45,6 +45,7 @@ export type HookFetch = (url: string, init?: HookFetchInit) => Promise<HookFetch
 
 export type HookConfig = CompactOptions & {
   apiKey?: string;
+  baseUrl?: string;
   compactAtPercent: number;
   /** Also write the per-call `decisions:` lines to the transcript, not only the outcome. */
   logDecisions: boolean;
@@ -96,16 +97,23 @@ export function resolveHookConfig(options: PluginOptions): HookConfig {
   if (config.compactionTimeoutMs <= 0) config.compactionTimeoutMs = HOOK_DEFAULTS.compactionTimeoutMs;
   const apiKey = optionString(options, 'apiKey');
   if (apiKey) config.apiKey = apiKey;
+  const baseUrl = optionString(options, 'baseUrl');
+  if (baseUrl) config.baseUrl = baseUrl;
   const goal = optionString(options, 'goal');
   if (goal) config.goal = goal;
   return config;
 }
 
 /** A `JevAsker` over the engine's `$.http.fetch`. */
-export function jevAsker(fetchFn: HookFetch, apiKey: string, model: string): JevAsker {
+export function jevAsker(
+  fetchFn: HookFetch,
+  apiKey: string,
+  model: string,
+  baseUrl?: string,
+): JevAsker {
   return {
     async ask(state, questions) {
-      const request = buildJevRequest({ apiKey, model }, state, questions);
+      const request = buildJevRequest({ apiKey, model, baseUrl }, state, questions);
       const response = await fetchFn(request.url, {
         method: request.method,
         headers: request.headers,
@@ -182,7 +190,11 @@ export async function compactSession(
   fetchFn: HookFetch,
 ): Promise<SessionCompaction> {
   if (!config.apiKey) throw new Error('TYPESAFE_API_KEY is not configured');
-  const result = await compact(messages, jevAsker(fetchFn, config.apiKey, config.model), config);
+  const result = await compact(
+    messages,
+    jevAsker(fetchFn, config.apiKey, config.model, config.baseUrl),
+    config,
+  );
   return { result, messages: toSessionMessages(messages, result.messages) };
 }
 
@@ -290,6 +302,26 @@ function log($: { ui: { log: (text: string) => void } }, text: string): void {
   }
 }
 
+async function getBaseUrl(
+  $: {
+    env: { get: (name: string) => Promise<string | undefined> };
+    settings: { read: () => Promise<Readonly<Record<string, unknown>>> };
+  },
+  config: HookConfig,
+): Promise<string | undefined> {
+  if (config.baseUrl) return config.baseUrl;
+  const fromEnv = await $.env.get('TYPESAFE_BASE_URL');
+  if (fromEnv) return fromEnv;
+  const settings = await $.settings.read();
+  const env = settings['env'];
+  if (env && typeof env === 'object') {
+    const value = (env as Record<string, unknown>)['TYPESAFE_BASE_URL'];
+    if (typeof value === 'string' && value) return value;
+  }
+  return undefined;
+
+}
+
 function notify(
   $: {
     ui: {
@@ -314,7 +346,7 @@ export const register: Register = (on: On, options: PluginOptions) => {
 
   on('session.compact', async ($, event, next) => {
     try {
-      const config = { ...configured, apiKey: await getApiKey($, configured) };
+      const config = { ...configured, apiKey: await getApiKey($, configured), baseUrl: await getBaseUrl($, configured) };
       if (event.instructions?.trim()) {
         const goal = config.goal || goalFromMessages(event.messages);
         config.goal = `${goal}\n\nCompaction instructions: ${event.instructions}`;
@@ -328,6 +360,7 @@ export const register: Register = (on: On, options: PluginOptions) => {
         (ms, options) => $.clock.sleep(ms, options),
       );
       if (config.logDecisions) for (const line of decisionLogLines(result)) log($, line);
+
 
       if (reductionRatio(result) < config.minReductionRatio) {
         notify(

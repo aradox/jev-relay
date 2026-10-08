@@ -63,10 +63,13 @@ The plugin declares these `userConfig` values in
 
 The TypeSafe key can be supplied as the sensitive `apiKey` plugin option or
 through `TYPESAFE_API_KEY`. The environment variable is the recommended
-development setup.
+development setup. The endpoint defaults to System One; the `baseUrl` option or
+`TYPESAFE_BASE_URL` points it elsewhere, e.g. at a local proxy that adds the
+key so it never enters the Claude Code process.
 
 Every option except `apiKey`, `compactAtPercent`, `minReductionRatio`,
 `model`, `compactionTimeoutMs` and `logDecisions` is passed straight to the library; see the root README for what they
+
 
 do. The `session.compact` hook runs the Jev requests concurrently. If Jev fails,
 the response is malformed, the key is unavailable, the history cannot be
