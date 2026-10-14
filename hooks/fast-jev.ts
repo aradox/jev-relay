@@ -22,6 +22,7 @@ import type {
 
 const HOOK_DEFAULTS = {
   compactAtPercent: 60,
+  logDecisions: false,
   minReductionRatio: 0.25,
   model: DEFAULT_MODEL,
 };
@@ -44,6 +45,8 @@ export type HookFetch = (url: string, init?: HookFetchInit) => Promise<HookFetch
 export type HookConfig = CompactOptions & {
   apiKey?: string;
   compactAtPercent: number;
+  /** Also write the per-call `decisions:` lines to the transcript, not only the outcome. */
+  logDecisions: boolean;
   minReductionRatio: number;
   model: string;
 };
@@ -51,6 +54,11 @@ export type HookConfig = CompactOptions & {
 function optionNumber(options: PluginOptions, key: string, fallback: number): number {
   const value = options[key];
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+function optionBoolean(options: PluginOptions, key: string, fallback: boolean): boolean {
+  const value = options[key];
+  return typeof value === 'boolean' ? value : fallback;
 }
 
 function optionString(options: PluginOptions, key: string): string | undefined {
@@ -74,6 +82,7 @@ export function resolveHookConfig(options: PluginOptions): HookConfig {
   const config: HookConfig = {
     ...numbers,
     compactAtPercent: optionNumber(options, 'compactAtPercent', HOOK_DEFAULTS.compactAtPercent),
+    logDecisions: optionBoolean(options, 'logDecisions', HOOK_DEFAULTS.logDecisions),
     minReductionRatio: optionNumber(
       options,
       'minReductionRatio',
@@ -285,7 +294,7 @@ export const register: Register = (on: On, options: PluginOptions) => {
         const response = await $.http.fetch(url, init);
         return { status: response.status, ok: response.ok, text: response.text };
       });
-      for (const line of decisionLogLines(result)) log($, line);
+      if (config.logDecisions) for (const line of decisionLogLines(result)) log($, line);
       if (reductionRatio(result) < config.minReductionRatio) {
         notify(
           $,
