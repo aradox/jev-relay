@@ -1,7 +1,7 @@
 {
   "name": "fast-jev-compaction",
-  "version": "0.3.0",
-  "description": "Verbatim Jev-guided compaction for Claude Code sessions.",
+  "version": "0.3.1-local.1",
+  "description": "Local SDK auto-compaction fix for VS Code; based on upstream 0.3.0.",
   "license": "MIT",
   "userConfig": {
     "apiKey": {

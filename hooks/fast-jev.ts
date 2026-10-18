@@ -259,6 +259,7 @@ function notify(
 export const register: Register = (on: On, options: PluginOptions) => {
   const configured = resolveHookConfig(options);
   let compacting = false;
+  let lastAttemptPercent: number | undefined;
 
   on('session.compact', async ($, event, next) => {
     try {
@@ -290,18 +291,42 @@ export const register: Register = (on: On, options: PluginOptions) => {
   });
 
   on('turn.complete', async ($, event: TurnCompleteInput, next) => {
-    if (compacting) return next(event);
+    // usage() and command.run() target the main conversation, not a child loop.
+    if (event.agentId || event.reason !== 'answer' || compacting) return next(event);
+    compacting = true;
+    let queued = false;
     try {
       const { context } = await $.session.usage();
-      if ((context.percent ?? 0) < configured.compactAtPercent) return next(event);
-      compacting = true;
-      await $.session.compact();
+      const percent = context.percent;
+      if (percent === undefined || !Number.isFinite(percent)) return next(event);
+      if (percent < configured.compactAtPercent) {
+        lastAttemptPercent = undefined;
+        return next(event);
+      }
+      // A fallback/short transcript can stay above the threshold. Allow another
+      // attempt only after 5 percentage points of growth, or a dip below it.
+      if (lastAttemptPercent !== undefined && percent < lastAttemptPercent + 5) return next(event);
+      lastAttemptPercent = percent;
+      try {
+        await $.session.compact();
+      } catch (error) {
+        const text = error instanceof Error ? error.message : String(error);
+        if (!text.includes('$.session.compact: not available in a headless')) throw error;
+        // Do not await an idle-queued command from the turn that must finish
+        // before it can run. Keep the guard until the queued command settles.
+        const pending = $.command.run({ command: 'compact' });
+        queued = true;
+        $.ui.log('auto-compact queued /compact for SDK session (local fix)');
+        void pending.catch((failure: unknown) => {
+          $.ui.log(`auto-compact queue failed (${failure instanceof Error ? failure.message : String(failure)})`);
+        }).finally(() => { compacting = false; });
+      }
     } catch (error) {
       $.ui.log(
         `auto-compact skipped (${error instanceof Error ? error.message : String(error)})`,
       );
     } finally {
-      compacting = false;
+      if (!queued) compacting = false;
     }
     return next(event);
   });
