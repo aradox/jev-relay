@@ -10,6 +10,7 @@ import type {
 
 import { compact, reductionRatio, resolveOptions } from '../src/compact.js';
 import { buildJevRequest, DEFAULT_MODEL, parseJevResponse } from '../src/request.js';
+import { goalFromMessages } from '../src/state.js';
 import type {
   CompactOptions,
   CompactResult,
@@ -243,6 +244,14 @@ async function getApiKey(
   return undefined;
 }
 
+function log($: { ui: { log: (text: string) => void } }, text: string): void {
+  try {
+    $.ui.log(text);
+  } catch {
+    // Diagnostics are best-effort; the compaction result must still be returned.
+  }
+}
+
 function notify(
   $: {
     ui: {
@@ -252,8 +261,12 @@ function notify(
   },
   text: string,
 ): void {
-  $.ui.log(text);
-  $.ui.toast(text, { timeoutMs: 15_000 });
+  log($, text);
+  try {
+    $.ui.toast(text, { timeoutMs: 15_000 });
+  } catch {
+    // A disconnected UI must not prevent the native fallback.
+  }
 }
 
 export const register: Register = (on: On, options: PluginOptions) => {
@@ -264,11 +277,15 @@ export const register: Register = (on: On, options: PluginOptions) => {
   on('session.compact', async ($, event, next) => {
     try {
       const config = { ...configured, apiKey: await getApiKey($, configured) };
+      if (event.instructions?.trim()) {
+        const goal = config.goal || goalFromMessages(event.messages);
+        config.goal = `${goal}\n\nCompaction instructions: ${event.instructions}`;
+      }
       const { result, messages } = await compactSession(event.messages, config, async (url, init) => {
         const response = await $.http.fetch(url, init);
         return { status: response.status, ok: response.ok, text: response.text };
       });
-      for (const line of decisionLogLines(result)) $.ui.log(line);
+      for (const line of decisionLogLines(result)) log($, line);
       if (reductionRatio(result) < config.minReductionRatio) {
         notify(
           $,
@@ -316,13 +333,13 @@ export const register: Register = (on: On, options: PluginOptions) => {
         // before it can run. Keep the guard until the queued command settles.
         const pending = $.command.run({ command: 'compact' });
         queued = true;
-        $.ui.log('auto-compact queued /compact for SDK session (local fix)');
+        log($, 'auto-compact queued /compact for SDK session (local fix)');
         void pending.catch((failure: unknown) => {
-          $.ui.log(`auto-compact queue failed (${failure instanceof Error ? failure.message : String(failure)})`);
+          log($, `auto-compact queue failed (${failure instanceof Error ? failure.message : String(failure)})`);
         }).finally(() => { compacting = false; });
       }
     } catch (error) {
-      $.ui.log(
+      log($,
         `auto-compact skipped (${error instanceof Error ? error.message : String(error)})`,
       );
     } finally {
