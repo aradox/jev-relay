@@ -1,4 +1,44 @@
-# fast-jev-compaction
+# Jev Relay
+
+Verbatim Jev compaction for Claude Code, with automatic compaction that also
+works in VS Code's SDK sessions.
+
+This is a fork of [fast-jev-compaction](https://github.com/tamaratran/fast-jev-compaction).
+It preserves the original compaction algorithm and adds a guarded SDK fallback:
+when the host refuses `$.session.compact()`, the plugin queues `/compact` to run
+after the current turn finishes. The existing Jev hook then handles that command.
+
+- Prevents duplicate queued requests and repeated compaction loops.
+- Only successful main-conversation turns trigger main-conversation compaction.
+- Keeps the default 60% trigger and built-in-summary fallback.
+- Includes 37 tests; verified with the VS Code 2.1.301 runtime in an SDK stream
+  session using synthetic data and a live TypeSafe request.
+
+The plugin identifier remains `fast-jev-compaction`; the marketplace is
+`fast-jev-local` for compatibility with the original local installation.
+See [LOCAL-FIX.md](LOCAL-FIX.md) for implementation and rollback details.
+
+## Install Jev Relay
+
+Set `TYPESAFE_API_KEY` in your user-level Claude Code settings environment.
+Compaction sends conversation text and tool inputs to TypeSafe; tool outputs
+are represented by short notes. Never commit your key.
+
+```sh
+claude plugin marketplace add aradox/jev-relay
+claude plugin install fast-jev-compaction@fast-jev-local --scope user
+```
+
+If the upstream plugin is installed, disable it to avoid duplicate hooks:
+
+```sh
+claude plugin disable fast-jev-compaction@fast-jev-compaction --scope user
+```
+
+Run `/reload-plugins` in existing sessions. Claude Code 2.1.287+ enables function
+hooks without an opt-in flag; earlier builds require the flag described below.
+
+## Original project documentation
 
 Claude Code plugin that replaces the compaction summary with Jev decisions:
 every tool call and result is scored in one fast request, stale ones are
@@ -146,8 +186,8 @@ Then add this repository as a plugin marketplace and install the plugin,
 either from the shell or as slash commands inside a session:
 
 ```sh
-claude plugin marketplace add tamaratran/fast-jev-compaction
-claude plugin install fast-jev-compaction@fast-jev-compaction
+claude plugin marketplace add aradox/jev-relay
+claude plugin install fast-jev-compaction@fast-jev-local
 ```
 
 The install prompts for the plugin options (API key, thresholds, `truncateHeadChars`,
