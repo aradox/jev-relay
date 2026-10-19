@@ -41,8 +41,10 @@ deadlines, the SDK queue and Relay's pending guard all coexist.
   data, with no production conversation used as a test fixture.
 - Plugin manifest validation and installed hook/source hash comparison.
 
-The exact release test outcomes are recorded in the release commit and local
-verification result. Unit/host tests use fake responses; the SDK smoke test
+Release checks passed: **51 unit tests, 49 regression tests, 3 native-hook tests**,
+TypeScript checks and plugin validation. The live VS Code 2.1.301 SDK smoke test
+kept 4/8 synthetic messages (66% character reduction); the debug log confirmed
+the Jev handler supplied the result and core summarization never ran. Unit/host tests use fake responses; the SDK smoke test
 uses TypeSafe. Character reduction is not proof of safe fact retention.
 
 ## Remaining limitations and deferred changes
