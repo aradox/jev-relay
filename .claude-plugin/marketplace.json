@@ -8,9 +8,8 @@
     {
       "name": "fast-jev-compaction",
       "source": "./",
-      "description": "Verbatim Jev-guided compaction for Claude Code sessions.",
-      "version": "0.3.1-local.1",
-
+      "description": "Jev Relay: guarded SDK compaction with validated decisions, bounded requests and Unicode-safe pruning.",
+      "version": "0.4.0",
       "license": "MIT"
     }
   ]

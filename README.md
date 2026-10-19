@@ -11,17 +11,19 @@ after the current turn finishes. The existing Jev hook then handles that command
 - Prevents duplicate queued requests and repeated compaction loops.
 - Only successful main-conversation turns trigger main-conversation compaction.
 - Keeps the default 60% trigger and built-in-summary fallback.
-- Includes 37 tests; verified with the VS Code 2.1.301 runtime in an SDK stream
+- Includes unit, regression and native-hook tests; verified with the VS Code 2.1.301 runtime in an SDK stream
   session using synthetic data and a live TypeSafe request.
 
 The plugin identifier remains `fast-jev-compaction`; the marketplace is
 `fast-jev-local` for compatibility with the original local installation.
-See [LOCAL-FIX.md](LOCAL-FIX.md) for implementation and rollback details.
+See [LOCAL-FIX.md](LOCAL-FIX.md) for implementation and rollback details, and
+[the upstream review](docs/upstream-review.md) for adopted fixes and known limitations.
 
 ## Install Jev Relay
 
 Set `TYPESAFE_API_KEY` in your user-level Claude Code settings environment.
-Compaction sends conversation text and tool inputs to TypeSafe; tool outputs
+Compaction sends conversation text and tool inputs to TypeSafe, with credential-shaped
+tool-input fields redacted; tool outputs
 are represented by short notes. Never commit your key.
 
 ```sh

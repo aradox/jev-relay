@@ -17,7 +17,10 @@ function transcript(): SessionMessage[] {
 
 function host(on: On) {
   const clock = mock.clock(on);
-  mock.env(on, { TYPESAFE_API_KEY: 'test-key' });
+  mock.env(on, {
+    TYPESAFE_API_KEY: 'test-key',
+    TYPESAFE_BASE_URL: 'https://api.typesafe.ai/v1/systemone',
+  });
   on('ui.log', () => ({ value: undefined }));
   on('ui.toast', () => ({ value: undefined }));
   const state = { stall: true, fetches: 0, summaries: 0 };

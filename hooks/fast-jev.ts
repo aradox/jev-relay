@@ -345,6 +345,9 @@ export const register: Register = (on: On, options: PluginOptions) => {
   let lastAttemptPercent: number | undefined;
 
   on('session.compact', async ($, event, next) => {
+    // Speculative summaries may never be used; do not score/prune their history.
+    // Real manual, automatic, plugin and subagent compactions still use Jev.
+    if (event.trigger === 'precompute') return { skip: 'Jev Relay waits for a live compaction' };
     try {
       const config = { ...configured, apiKey: await getApiKey($, configured), baseUrl: await getBaseUrl($, configured) };
       if (event.instructions?.trim()) {
