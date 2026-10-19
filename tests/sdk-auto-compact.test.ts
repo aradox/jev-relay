@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { register } from '../hooks/fast-jev.ts';
 
-const refusal = 'fast-jev-compaction: $.session.compact: not available in a headless (-p / SDK) session yet';
+const refusal = 'jev-relay: $.session.compact: not available in a headless (-p / SDK) session yet';
 function harness() {
   const hooks: Record<string, (...args: any[]) => Promise<any>> = {};
   register(((name: string, handler: any) => { hooks[name] = handler; }) as never, {});

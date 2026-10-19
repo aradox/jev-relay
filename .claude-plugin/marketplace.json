@@ -1,15 +1,15 @@
 {
-  "name": "fast-jev-local",
+  "name": "jev-relay",
   "owner": {
-    "name": "tamaratran",
-    "url": "https://github.com/tamaratran"
+    "name": "aradox",
+    "url": "https://github.com/aradox"
   },
   "plugins": [
     {
-      "name": "fast-jev-compaction",
+      "name": "jev-relay",
       "source": "./",
       "description": "Jev Relay: guarded SDK compaction with validated decisions, bounded requests and Unicode-safe pruning.",
-      "version": "0.4.0",
+      "version": "0.4.1",
       "license": "MIT"
     }
   ]

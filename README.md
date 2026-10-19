@@ -14,8 +14,7 @@ after the current turn finishes. The existing Jev hook then handles that command
 - Includes unit, regression and native-hook tests; verified with the VS Code 2.1.301 runtime in an SDK stream
   session using synthetic data and a live TypeSafe request.
 
-The plugin identifier remains `fast-jev-compaction`; the marketplace is
-`fast-jev-local` for compatibility with the original local installation.
+The plugin and marketplace are both named `jev-relay`: `jev-relay@jev-relay`.
 See [LOCAL-FIX.md](LOCAL-FIX.md) for implementation and rollback details, and
 [the upstream review](docs/upstream-review.md) for adopted fixes and known limitations.
 
@@ -28,7 +27,7 @@ are represented by short notes. Never commit your key.
 
 ```sh
 claude plugin marketplace add aradox/jev-relay
-claude plugin install fast-jev-compaction@fast-jev-local --scope user
+claude plugin install jev-relay@jev-relay --scope user
 ```
 
 If the upstream plugin is installed, disable it to avoid duplicate hooks:
@@ -37,7 +36,9 @@ If the upstream plugin is installed, disable it to avoid duplicate hooks:
 claude plugin disable fast-jev-compaction@fast-jev-compaction --scope user
 ```
 
-Run `/reload-plugins` in existing sessions. Claude Code 2.1.287+ enables function
+If you used our earlier local version, also disable it with
+`claude plugin disable fast-jev-compaction@fast-jev-local --scope user`.
+Then run `/reload-plugins` in existing sessions. Claude Code 2.1.287+ enables function
 hooks without an opt-in flag; earlier builds require the flag described below.
 
 ## Original project documentation
@@ -192,14 +193,14 @@ either from the shell or as slash commands inside a session:
 
 ```sh
 claude plugin marketplace add aradox/jev-relay
-claude plugin install fast-jev-compaction@fast-jev-local
+claude plugin install jev-relay@jev-relay
 ```
 
 The install prompts for the plugin options (API key, thresholds, `truncateHeadChars`,
 …); leave them at their defaults to use `TYPESAFE_API_KEY` from the environment.
 Restart Claude Code or run `/reload-plugins`. From then on `/compact` (and
 auto-compaction) goes through Jev: the toast reads
-`fast-jev-compaction: kept N/M messages, no summary (…)` when the pruned history
+`jev-relay: kept N/M messages, no summary (…)` when the pruned history
 replaced the built-in summary, or `fallback to built-in summary (…)` when Jev
 could not remove enough (short sessions, or when it fails).
 

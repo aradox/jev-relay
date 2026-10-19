@@ -1,6 +1,6 @@
 {
-  "name": "fast-jev-compaction",
-  "version": "0.4.0",
+  "name": "jev-relay",
+  "version": "0.4.1",
   "description": "Jev Relay: reliable Jev compaction for Claude Code and VS Code SDK sessions.",
   "license": "MIT",
   "userConfig": {

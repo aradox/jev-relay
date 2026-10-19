@@ -1,7 +1,7 @@
 # Local VS Code compaction fix
 
 Based on upstream commit e3f262a7f4d42bd8dd32ced30d26176f7cb545b0 (0.3.0).
-Local plugin version: 0.4.0. Marketplace: fast-jev-local.
+Local plugin version: 0.4.1. Plugin: jev-relay. Marketplace: jev-relay.
 
 When the SDK host rejects $.session.compact(), queue the built-in compact
 command without awaiting it from turn.complete. This invokes the existing
@@ -29,10 +29,14 @@ Existing sessions need /reload-plugins or a VS Code window reload.
 
 Rollback from PowerShell:
 
-    claude plugin disable fast-jev-compaction@fast-jev-local --scope user
+    claude plugin disable jev-relay@jev-relay --scope user
     claude plugin enable fast-jev-compaction@fast-jev-compaction --scope user
 
 Then reload the session. Keep the upstream copy disabled during local use.
 
 Version 0.4.0 adds reviewed upstream reliability fixes. See docs/upstream-review.md
 for sources, adoption decisions, current checks and remaining host limitations.
+
+Version 0.4.1 renames the plugin, marketplace and local package to jev-relay.
+The npm library examples in the original documentation refer to the upstream
+published package; this fork has not been published to npm.

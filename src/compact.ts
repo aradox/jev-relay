@@ -194,7 +194,7 @@ function truncatedResultText(text: string, isError: boolean, headChars: number):
   // would leave a lone surrogate in the rebuilt transcript.
   const cut = splitsSurrogatePair(text, headChars) ? headChars - 1 : headChars;
   const head = cut > 0 ? `${text.slice(0, cut)}\n` : '';
-  return `${head}[fast-jev-compaction truncated ${text.length - cut} chars of this tool result${
+  return `${head}[jev-relay truncated ${text.length - cut} chars of this tool result${
     isError ? ' (error)' : ''
   }; re-run the tool if needed]`;
 }

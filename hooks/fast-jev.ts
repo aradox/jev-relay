@@ -379,7 +379,7 @@ export const register: Register = (on: On, options: PluginOptions) => {
       return { messages };
     } catch (error) {
       if (error instanceof CompactionTimeoutError && event.trigger === 'plugin') {
-        return { skip: `fast-jev-compaction: ${error.message}; conversation left unchanged` };
+        return { skip: `jev-relay: ${error.message}; conversation left unchanged` };
       }
       notify(
         $,
